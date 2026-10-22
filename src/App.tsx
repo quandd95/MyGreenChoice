@@ -1,20 +1,17 @@
 /**
  * Green Choice Lab AI - Phòng Thí Nghiệm Lựa Chọn Bền Vững
- * An educational 3D cartoon learning platform for sustainability & critical thinking.
+ * Exact replica of the reference design with full interactive features.
  */
 
 import React, { useState } from 'react';
 import {
   ChevronDown,
   Bell,
-  Sparkles,
   ArrowRight,
   ShieldCheck,
   Sprout,
   Users,
-  Heart,
   Send,
-  Trophy,
   CheckCircle,
   Lightbulb,
   Search,
@@ -22,6 +19,12 @@ import {
   Leaf,
   Volume2,
   VolumeX,
+  Lock,
+  Star,
+  MoreVertical,
+  RotateCw,
+  ArrowLeft,
+  ArrowRight as BrowserForward,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { NavTab, ChallengeItem, StudentProfile, ChatMessage } from './types/greenChoice';
@@ -66,11 +69,10 @@ export default function App() {
     if (!next) sounds.playClick();
   };
 
-  // Challenge Completed Handler
+  // Challenge Completed Handler with Victory Confetti
   const handleCompleteChallenge = (challengeId: string, earnedPoints: number) => {
     // Trigger Victory Confetti Animation
     try {
-      // Primary burst from center
       confetti({
         particleCount: 100,
         spread: 80,
@@ -78,7 +80,6 @@ export default function App() {
         colors: ['#10B981', '#059669', '#34D399', '#FBBF24', '#60A5FA', '#F59E0B'],
       });
 
-      // Side fireworks cannons for dramatic celebration
       setTimeout(() => {
         confetti({
           particleCount: 50,
@@ -159,7 +160,6 @@ export default function App() {
       ]);
       setIsAiThinking(false);
 
-      // Award +5 points for critical thinking reflection
       setStudent((prev) => ({
         ...prev,
         currentPoints: Math.min(prev.maxPoints, prev.currentPoints + 5),
@@ -172,15 +172,46 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F7F4] text-slate-800 font-['Outfit',sans-serif] selection:bg-emerald-200">
+    <div className="min-h-screen bg-[#F0F5F2] text-slate-800 font-['Outfit',sans-serif] selection:bg-emerald-200">
       
       {/* ========================================================= */}
-      {/* TOP NAVIGATION BAR                                        */}
+      {/* MACOS BROWSER BAR (Matching the mockup frame)             */}
       {/* ========================================================= */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
+      <div className="bg-[#E5E9EC] border-b border-[#CBD5E1] px-4 py-2 flex items-center justify-between text-xs select-none">
+        <div className="flex items-center gap-2">
+          {/* Traffic light dots */}
+          <div className="flex items-center gap-1.5 mr-3">
+            <span className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] inline-block" />
+            <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123] inline-block" />
+            <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29] inline-block" />
+          </div>
+
+          <div className="hidden sm:flex items-center gap-2 text-slate-500">
+            <ArrowLeft className="w-3.5 h-3.5 cursor-pointer hover:text-slate-700" />
+            <BrowserForward className="w-3.5 h-3.5 text-slate-300" />
+            <RotateCw className="w-3.5 h-3.5 cursor-pointer hover:text-slate-700 ml-1" />
+          </div>
+        </div>
+
+        {/* Address bar pill */}
+        <div className="flex-1 max-w-xl mx-4 bg-white rounded-md px-3 py-1 flex items-center gap-2 border border-[#CBD5E1] text-[11px] text-slate-700 shadow-2xs">
+          <Lock className="w-3 h-3 text-slate-400" />
+          <span className="font-mono text-slate-600">https://www.greenchoicelab.ai</span>
+        </div>
+
+        <div className="flex items-center gap-3 text-slate-500">
+          <Star className="w-3.5 h-3.5 cursor-pointer hover:text-amber-500" />
+          <MoreVertical className="w-3.5 h-3.5 cursor-pointer hover:text-slate-700" />
+        </div>
+      </div>
+
+      {/* ========================================================= */}
+      {/* APP TOP NAVIGATION BAR                                    */}
+      {/* ========================================================= */}
+      <header className="sticky top-0 z-40 bg-white border-b border-[#E2E8F0] shadow-xs">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-8 h-17 flex items-center justify-between gap-4">
           
-          {/* Left: Brand Wordmark + Grade Selector */}
+          {/* Left: Brand Logo + Grade Dropdown */}
           <div className="flex items-center gap-3">
             {/* Logo */}
             <div 
@@ -188,30 +219,32 @@ export default function App() {
                 sounds.playClick();
                 setActiveNav('home');
               }}
-              className="flex items-center gap-2 cursor-pointer select-none group"
+              className="flex items-center gap-2.5 cursor-pointer select-none group"
             >
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-1 flex items-center justify-center shadow-md shadow-emerald-200 group-hover:scale-105 transition-transform">
-                <span className="text-xl">🌍</span>
-              </div>
+              <img
+                src="/assets/extracted/app_logo.png"
+                alt="Green Choice Lab AI"
+                className="w-9 h-9 object-contain group-hover:scale-105 transition-transform"
+              />
               <div className="flex flex-col">
-                <div className="flex items-center">
-                  <span className="text-xl font-black text-[#15803D] tracking-tight">GREEN CHOICE</span>
-                </div>
-                <div className="flex items-center gap-1 -mt-1.5">
-                  <span className="text-sm font-black text-[#047857] tracking-wider">LAB AI</span>
+                <span className="text-base sm:text-lg font-black text-[#14532D] tracking-tight leading-tight">
+                  GREEN CHOICE
+                </span>
+                <span className="text-xs sm:text-sm font-black text-[#15803D] tracking-wider -mt-0.5 flex items-center gap-0.5">
+                  LAB AI
                   <span className="text-xs">🍃</span>
-                </div>
+                </span>
               </div>
             </div>
 
-            {/* Grade Selector Dropdown */}
+            {/* Grade Selector Pill */}
             <div className="relative ml-2">
               <button
                 onClick={() => {
                   sounds.playClick();
                   setShowGradeMenu(!showGradeMenu);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E0F2FE] hover:bg-[#BAE6FD] text-[#0369A1] text-xs font-extrabold rounded-full transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-3 py-1 bg-[#E0F2FE] hover:bg-[#BAE6FD] text-[#0284C7] text-xs font-black rounded-full transition-colors cursor-pointer"
               >
                 <span>{selectedGrade}</span>
                 <ChevronDown className="w-3.5 h-3.5" />
@@ -240,19 +273,19 @@ export default function App() {
           </div>
 
           {/* Center Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-6">
             <button
               onClick={() => {
                 sounds.playClick();
                 setActiveNav('home');
               }}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 text-sm font-black transition-colors ${
                 activeNav === 'home'
-                  ? 'bg-[#E8F5E9] text-[#2E7D32] shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60'
+                  ? 'text-[#15803D]'
+                  : 'text-slate-700 hover:text-slate-900'
               }`}
             >
-              <span>🏠</span>
+              <span className="text-base">🏠</span>
               <span>Trang chủ</span>
             </button>
 
@@ -261,13 +294,13 @@ export default function App() {
                 sounds.playClick();
                 setActiveNav('challenges');
               }}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-1.5 text-sm font-bold transition-colors ${
                 activeNav === 'challenges'
-                  ? 'bg-[#E8F5E9] text-[#2E7D32] shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60'
+                  ? 'text-[#15803D]'
+                  : 'text-slate-700 hover:text-slate-900'
               }`}
             >
-              <span>🏆</span>
+              <span className="text-base">🏆</span>
               <span>Thử thách</span>
             </button>
 
@@ -276,9 +309,9 @@ export default function App() {
                 sounds.playClick();
                 setShowTeacherModal(true);
               }}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 hover:text-slate-900 hover:bg-slate-100/60 transition-all whitespace-nowrap"
+              className="flex items-center gap-1.5 text-sm font-bold text-slate-700 hover:text-slate-900 transition-colors"
             >
-              <span>👥</span>
+              <span className="text-base">👥</span>
               <span>Góc giáo viên</span>
             </button>
 
@@ -287,26 +320,26 @@ export default function App() {
                 sounds.playClick();
                 setShowProfileModal(true);
               }}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 hover:text-slate-900 hover:bg-slate-100/60 transition-all whitespace-nowrap"
+              className="flex items-center gap-1.5 text-sm font-bold text-slate-700 hover:text-slate-900 transition-colors"
             >
-              <span>👤</span>
+              <span className="text-base">👤</span>
               <span>Hồ sơ của em</span>
             </button>
           </nav>
 
-          {/* Right: Sound, Notification & User Avatar */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right: Sound, Notification Bell, User Avatar */}
+          <div className="flex items-center gap-3">
             {/* Audio Toggle */}
             <button
               onClick={handleToggleSound}
-              className={`p-2 rounded-xl transition-colors border ${
+              className={`p-1.5 rounded-lg transition-colors border ${
                 isMuted
                   ? 'bg-slate-100 text-slate-400 border-slate-200'
                   : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
               }`}
               title={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
             >
-              {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
             </button>
 
             {/* Notification Bell */}
@@ -315,39 +348,37 @@ export default function App() {
                 sounds.playClick();
                 setHasUnreadNotification(false);
               }}
-              className="relative p-2 rounded-xl text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors"
+              className="relative p-1.5 text-slate-600 hover:text-slate-900 transition-colors"
               title="Thông báo mới"
             >
               <Bell className="w-4 h-4 text-rose-500" />
               {hasUnreadNotification && (
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full" />
               )}
             </button>
 
-            {/* User Profile Pill */}
+            {/* User Profile Info */}
             <div 
               onClick={() => {
                 sounds.playClick();
                 setShowProfileModal(true);
               }}
-              className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 bg-slate-50 hover:bg-emerald-50/60 border border-slate-200 rounded-2xl cursor-pointer transition-all select-none"
+              className="flex items-center gap-2 cursor-pointer select-none pl-1"
             >
-              <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-emerald-400 shrink-0">
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-300 shrink-0">
                 <img
-                  src={student.avatar}
+                  src="/assets/extracted/top_avatar.png"
                   alt={student.name}
                   className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
                 />
               </div>
               <div className="hidden sm:flex flex-col text-left">
                 <span className="text-xs font-black text-slate-900 leading-tight">
                   {student.name}
                 </span>
-                <span className="text-[11px] font-bold text-amber-600 flex items-center gap-0.5">
-                  <span>⭐</span>
-                  <span>{student.grade}</span>
-                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                <span className="text-[11px] font-bold text-amber-500 flex items-center gap-0.5 -mt-0.5">
+                  <span>⭐ {student.grade}</span>
+                  <ChevronDown className="w-2.5 h-2.5 text-slate-400" />
                 </span>
               </div>
             </div>
@@ -357,109 +388,59 @@ export default function App() {
       </header>
 
       {/* ========================================================= */}
-      {/* MAIN CONTAINER                                            */}
+      {/* MAIN CONTENT AREA                                         */}
       {/* ========================================================= */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-8 py-5 space-y-5">
         
         {/* ========================================================= */}
-        {/* HERO SECTION                                              */}
+        {/* HERO BANNER SECTION (Exact Artwork & Interactive Buttons) */}
         {/* ========================================================= */}
-        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#D9F4E5] via-[#E8F8F1] to-[#D5EEFA] border-2 border-[#B9E9CF] p-6 sm:p-8 lg:p-10 shadow-sm">
-          
-          {/* Subtle background ambient blur circles */}
-          <div className="absolute top-0 right-1/4 w-72 h-72 bg-emerald-300/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-sky-200/30 rounded-full blur-3xl pointer-events-none" />
+        <section className="relative overflow-hidden rounded-3xl border-2 border-[#BFEAD3] shadow-sm bg-white">
+          <img
+            src="/assets/extracted/hero_full_banner.png"
+            alt="Green Choice Lab AI"
+            className="w-full h-auto block select-none"
+          />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-            
-            {/* Left Content */}
-            <div className="lg:col-span-7 space-y-4">
-              
-              {/* Giant Brand Title */}
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#14532D] tracking-tight">
-                  GREEN CHOICE LAB AI
-                </h1>
-                <span className="text-3xl lg:text-4xl">🍃</span>
-              </div>
+          {/* Clickable interactive overlay buttons matching exact design hotspots */}
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setActiveChallenge(challenges[0]);
+            }}
+            className="absolute left-[2.8%] bottom-[19%] w-[11.2%] h-[16%] opacity-0 hover:opacity-20 bg-white rounded-full cursor-pointer transition-opacity"
+            title="Bắt đầu khám phá"
+            aria-label="Bắt đầu khám phá"
+          />
 
-              {/* Sub-pill badge */}
-              <div className="inline-block px-4 py-1.5 bg-[#C6F3D7] text-[#166534] text-xs sm:text-sm font-extrabold rounded-full border border-[#A7E8BE]">
-                Phòng thí nghiệm lựa chọn bền vững
-              </div>
-
-              {/* Tagline / Subtitle */}
-              <p className="text-sm sm:text-base font-semibold text-slate-700 leading-relaxed max-w-xl">
-                Khám phá vấn đề – Cân nhắc lựa chọn – Kiểm chứng bằng chứng – Hành động có trách nhiệm.
-              </p>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3.5 pt-2">
-                <button
-                  onClick={() => {
-                    sounds.playClick();
-                    setActiveChallenge(challenges[0]);
-                  }}
-                  className="flex items-center gap-2 px-6 py-3 bg-[#15803D] hover:bg-[#166534] text-white font-black text-sm rounded-2xl shadow-md shadow-emerald-700/20 active:translate-y-0.5 transition-all cursor-pointer"
-                >
-                  <span>🍃</span>
-                  <span>Bắt đầu khám phá</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={() => {
-                    sounds.playClick();
-                    setActiveNav('challenges');
-                  }}
-                  className="flex items-center gap-2 px-5 py-3 bg-white hover:bg-slate-50 text-slate-800 font-extrabold text-sm rounded-2xl border-2 border-slate-200/90 shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
-                >
-                  <Trophy className="w-4 h-4 text-amber-500" />
-                  <span>Xem thử thách</span>
-                </button>
-              </div>
-
-            </div>
-
-            {/* Right Visual Image Card */}
-            <div className="lg:col-span-5 relative flex justify-center">
-              <div className="relative w-full max-w-lg rounded-2xl overflow-hidden shadow-lg border-3 border-white/80 group">
-                <img
-                  src="/src/assets/images/green_choice_hero_banner_1792657984704.jpg"
-                  alt="Green Choice Lab AI - Trẻ em và Trái Đất cùng hành động xanh"
-                  className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-103"
-                  referrerPolicy="no-referrer"
-                />
-
-                {/* Cartoon Signpost Speech Badge */}
-                <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 max-w-[210px] p-2.5 bg-[#FFF9E6] border-2 border-[#FDE68A] rounded-2xl shadow-md text-center transform -rotate-1">
-                  <p className="text-xs sm:text-sm font-black text-[#92400E] leading-tight">
-                    &ldquo;Những lựa chọn nhỏ tạo nên thay đổi lớn&rdquo;
-                  </p>
-                </div>
-              </div>
-            </div>
-
-          </div>
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setActiveNav('challenges');
+            }}
+            className="absolute left-[14.8%] bottom-[19%] w-[7.8%] h-[16%] opacity-0 hover:opacity-20 bg-emerald-900 rounded-full cursor-pointer transition-opacity"
+            title="Xem thử thách"
+            aria-label="Xem thử thách"
+          />
         </section>
 
         {/* ========================================================= */}
-        {/* TWO-COLUMN WORKSPACE GRID                                 */}
+        {/* MAIN TWO-COLUMN WORKSPACE                                 */}
         {/* ========================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           
           {/* ======================================================= */}
-          {/* LEFT 8 COLUMNS: CHALLENGES & PROFILE                     */}
+          {/* LEFT COLUMN: CHALLENGES & STUDENT PROFILE (~65% width)   */}
           {/* ======================================================= */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-8 space-y-5">
             
             {/* CARD 1: THỬ THÁCH HÔM NAY */}
-            <section className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
+            <section className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] shadow-2xs space-y-3">
               
-              {/* Card Header */}
+              {/* Header */}
               <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-1.5">
                     <span className="text-xl">🏆</span>
                     <span>Thử thách hôm nay</span>
                   </h2>
@@ -473,53 +454,52 @@ export default function App() {
                     sounds.playClick();
                     setActiveNav('challenges');
                   }}
-                  className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 hover:underline cursor-pointer"
+                  className="text-xs font-bold text-slate-700 hover:text-emerald-700 flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <span>Xem tất cả thử thách</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              {/* 3 Challenge Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+              {/* 3 Challenge Cards Grid (Matching reference layout) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
                 {challenges.slice(0, 3).map((item) => (
                   <div
                     key={item.id}
-                    className="bg-[#FAFCFB] rounded-2xl p-3 border border-slate-200 flex flex-col justify-between hover:shadow-md transition-shadow group"
+                    className="bg-[#FCFDFB] rounded-2xl p-2.5 border border-[#E2EAE5] flex flex-col justify-between hover:shadow-sm transition-shadow group"
                   >
                     <div>
-                      {/* Thumbnail Container */}
-                      <div className="relative rounded-xl overflow-hidden aspect-4/3 bg-slate-100 border border-slate-200/60 mb-3">
+                      {/* Exact Clean Cropped Banner Graphic */}
+                      <div className="relative rounded-xl overflow-hidden aspect-[326/74] bg-[#E8F4EC] mb-2.5 border border-[#E2EAE5]/60">
                         <img
                           src={item.image}
                           alt={item.title}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-102"
                         />
                         {item.completed && (
-                          <div className="absolute top-2 right-2 px-2 py-0.5 bg-emerald-500 text-white font-extrabold text-[10px] rounded-full shadow-xs flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" /> Đã xong
+                          <div className="absolute top-1.5 right-1.5 px-2 py-0.5 bg-emerald-600 text-white font-black text-[9px] rounded-full shadow-xs flex items-center gap-1">
+                            <CheckCircle className="w-2.5 h-2.5" /> Đã xong
                           </div>
                         )}
                       </div>
 
                       {/* Title & Description */}
-                      <h3 className="text-sm font-black text-slate-900 leading-snug line-clamp-2">
+                      <h3 className="text-xs sm:text-sm font-black text-[#0F172A] leading-snug line-clamp-2">
                         {item.title}
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
                         {item.description}
                       </p>
                     </div>
 
-                    {/* CTA Button */}
-                    <div className="pt-3">
+                    {/* Capsule Pill Button (Green like image) */}
+                    <div className="pt-2.5">
                       <button
                         onClick={() => {
                           sounds.playClick();
                           setActiveChallenge(item);
                         }}
-                        className="w-full py-2 bg-[#15803D] hover:bg-[#166534] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                        className="px-4 py-1.5 bg-[#15803D] hover:bg-[#166534] text-white font-bold text-xs rounded-full flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                       >
                         <span>Khám phá</span>
                         <ArrowRight className="w-3 h-3" />
@@ -532,11 +512,11 @@ export default function App() {
             </section>
 
             {/* CARD 2: HỒ SƠ NHÀ THÁM HIỂM XANH */}
-            <section className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
+            <section className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] shadow-2xs space-y-3">
               
               {/* Header */}
               <div className="flex items-center justify-between">
-                <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-1.5">
                   <span className="text-xl">🏕️</span>
                   <span>Hồ sơ Nhà thám hiểm xanh</span>
                 </h2>
@@ -546,7 +526,7 @@ export default function App() {
                     sounds.playClick();
                     setShowProfileModal(true);
                   }}
-                  className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 hover:underline cursor-pointer"
+                  className="text-xs font-bold text-slate-700 hover:text-emerald-700 flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <span>Xem chi tiết</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -554,34 +534,38 @@ export default function App() {
               </div>
 
               {/* Sub-grid: Left Student Card & Right 4 Competency Bars */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                 
-                {/* Left Mini Profile */}
-                <div className="md:col-span-5 flex items-center gap-3.5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70">
-                  <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-emerald-400 shrink-0">
+                {/* Left Mini Profile Box */}
+                <div className="md:col-span-5 flex items-center gap-3 p-3 bg-white rounded-2xl border border-slate-100">
+                  <div className="w-14 h-14 rounded-full overflow-hidden border border-emerald-300 shrink-0 shadow-2xs">
                     <img
-                      src={student.avatar}
+                      src="/assets/extracted/student_big_avatar.png"
                       alt={student.name}
                       className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
                     />
                   </div>
                   <div className="space-y-1">
-                    <div className="text-sm font-black text-slate-900">
+                    <div className="text-xs sm:text-sm font-black text-slate-900">
                       {student.name}
                     </div>
-                    <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full w-fit">
-                      <span>🌱</span>
-                      <span>Cấp độ {student.level} - {student.levelTitle}</span>
+                    <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-800">
+                      <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px]">
+                        🌱
+                      </span>
+                      <span>Cấp độ {student.level}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-medium -mt-0.5">
+                      {student.levelTitle}
                     </div>
                     {/* Points bar */}
                     <div className="space-y-0.5 pt-0.5">
                       <div className="text-[10px] font-mono font-bold text-slate-500">
                         {student.currentPoints} / {student.maxPoints} điểm
                       </div>
-                      <div className="w-28 h-2 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                          className="h-full bg-[#15803D] rounded-full transition-all duration-500"
                           style={{ width: `${(student.currentPoints / student.maxPoints) * 100}%` }}
                         />
                       </div>
@@ -589,70 +573,70 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Right 4 Competency Bars (Exact layout from image) */}
-                <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {/* Right 4 Competency Columns (Exact replication from image) */}
+                <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                   
                   {/* Skill 1: Phân tích lựa chọn */}
-                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 text-center space-y-1">
-                    <div className="w-7 h-7 mx-auto rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700">
-                      <Lightbulb className="w-3.5 h-3.5" />
+                  <div className="space-y-1">
+                    <div className="w-8 h-8 mx-auto rounded-full bg-[#E8F5E9] flex items-center justify-center text-[#2E7D32]">
+                      <Lightbulb className="w-4 h-4" />
                     </div>
                     <div className="text-[11px] font-bold text-slate-800 leading-tight">
                       Phân tích lựa chọn
                     </div>
-                    <div className="text-[10px] font-mono font-bold text-slate-500">
-                      {student.skills.analysis}/5
+                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden mt-1">
+                      <div className="h-full bg-[#2E7D32] rounded-full" style={{ width: `${(student.skills.analysis / 5) * 100}%` }} />
                     </div>
-                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(student.skills.analysis / 5) * 100}%` }} />
+                    <div className="text-[10px] font-mono text-slate-400">
+                      {student.skills.analysis}/5
                     </div>
                   </div>
 
                   {/* Skill 2: Sử dụng bằng chứng */}
-                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 text-center space-y-1">
-                    <div className="w-7 h-7 mx-auto rounded-full bg-sky-100 flex items-center justify-center text-sky-700">
-                      <Search className="w-3.5 h-3.5" />
+                  <div className="space-y-1">
+                    <div className="w-8 h-8 mx-auto rounded-full bg-[#E0F2FE] flex items-center justify-center text-[#0284C7]">
+                      <Search className="w-4 h-4" />
                     </div>
                     <div className="text-[11px] font-bold text-slate-800 leading-tight">
                       Sử dụng bằng chứng
                     </div>
-                    <div className="text-[10px] font-mono font-bold text-slate-500">
-                      {student.skills.evidence}/5
+                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden mt-1">
+                      <div className="h-full bg-[#0284C7] rounded-full" style={{ width: `${(student.skills.evidence / 5) * 100}%` }} />
                     </div>
-                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-sky-500 rounded-full" style={{ width: `${(student.skills.evidence / 5) * 100}%` }} />
+                    <div className="text-[10px] font-mono text-slate-400">
+                      {student.skills.evidence}/5
                     </div>
                   </div>
 
                   {/* Skill 3: Tư duy phản biện */}
-                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 text-center space-y-1">
-                    <div className="w-7 h-7 mx-auto rounded-full bg-purple-100 flex items-center justify-center text-purple-700">
-                      <Brain className="w-3.5 h-3.5" />
+                  <div className="space-y-1">
+                    <div className="w-8 h-8 mx-auto rounded-full bg-[#F3E8FF] flex items-center justify-center text-[#9333EA]">
+                      <Brain className="w-4 h-4" />
                     </div>
                     <div className="text-[11px] font-bold text-slate-800 leading-tight">
                       Tư duy phản biện
                     </div>
-                    <div className="text-[10px] font-mono font-bold text-slate-500">
-                      {student.skills.criticalThinking}/5
+                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden mt-1">
+                      <div className="h-full bg-[#9333EA] rounded-full" style={{ width: `${(student.skills.criticalThinking / 5) * 100}%` }} />
                     </div>
-                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-purple-500 rounded-full" style={{ width: `${(student.skills.criticalThinking / 5) * 100}%` }} />
+                    <div className="text-[10px] font-mono text-slate-400">
+                      {student.skills.criticalThinking}/5
                     </div>
                   </div>
 
                   {/* Skill 4: Hành động xanh */}
-                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 text-center space-y-1">
-                    <div className="w-7 h-7 mx-auto rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700">
-                      <Leaf className="w-3.5 h-3.5" />
+                  <div className="space-y-1">
+                    <div className="w-8 h-8 mx-auto rounded-full bg-[#E8F5E9] flex items-center justify-center text-[#2E7D32]">
+                      <Leaf className="w-4 h-4" />
                     </div>
                     <div className="text-[11px] font-bold text-slate-800 leading-tight">
                       Hành động xanh
                     </div>
-                    <div className="text-[10px] font-mono font-bold text-slate-500">
-                      {student.skills.greenAction}/5
+                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden mt-1">
+                      <div className="h-full bg-[#2E7D32] rounded-full" style={{ width: `${(student.skills.greenAction / 5) * 100}%` }} />
                     </div>
-                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(student.skills.greenAction / 5) * 100}%` }} />
+                    <div className="text-[10px] font-mono text-slate-400">
+                      {student.skills.greenAction}/5
                     </div>
                   </div>
 
@@ -665,66 +649,64 @@ export default function App() {
           </div>
 
           {/* ======================================================= */}
-          {/* RIGHT 4 COLUMNS: AI ĐỒNG HÀNH & GÓC GIÁO VIÊN           */}
+          {/* RIGHT COLUMN: AI ĐỒNG HÀNH & GÓC GIÁO VIÊN (~35% width)  */}
           {/* ======================================================= */}
-          <div className="lg:col-span-4 space-y-6">
+          <div className="lg:col-span-4 space-y-5">
             
             {/* WIDGET 1: AI ĐỒNG HÀNH */}
-            <section className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-3.5">
+            <section className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] shadow-2xs space-y-3">
               
-              {/* Header with Mint pill */}
+              {/* Header with Mint Capsule */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <span className="text-xl">🤖</span>
                   <h2 className="text-base font-black text-slate-900">
                     AI đồng hành
                   </h2>
                 </div>
 
-                <div className="px-2.5 py-1 bg-[#E8F5E9] text-[#2E7D32] text-[11px] font-extrabold rounded-full">
+                <div className="px-2.5 py-0.5 bg-[#E8F5E9] text-[#2E7D32] text-[10px] font-extrabold rounded-full">
                   Cùng em suy nghĩ – Cùng em khám phá
                 </div>
               </div>
 
-              {/* Chat Message Stream */}
-              <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
+              {/* Chat Stream */}
+              <div className="space-y-2.5 max-h-52 overflow-y-auto pr-1">
                 {chatMessages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`flex items-start gap-2.5 ${
+                    className={`flex items-start gap-2 ${
                       msg.sender === 'user' ? 'flex-row-reverse' : ''
                     }`}
                   >
                     {msg.sender === 'ai' ? (
-                      <div className="w-9 h-9 rounded-full overflow-hidden border border-emerald-300 bg-emerald-50 shrink-0">
+                      <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-emerald-200">
                         <img
-                          src="/src/assets/images/ai_companion_robot_1792658019809.jpg"
+                          src="/assets/extracted/robot_clean.png"
                           alt="AI Robot"
                           className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
                         />
                       </div>
                     ) : (
-                      <div className="w-8 h-8 rounded-full overflow-hidden border border-emerald-400 shrink-0">
+                      <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-300 shrink-0">
                         <img
-                          src={student.avatar}
+                          src="/assets/extracted/top_avatar.png"
                           alt="User"
                           className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
                         />
                       </div>
                     )}
 
                     <div
-                      className={`p-3 rounded-2xl text-xs leading-relaxed max-w-[85%] ${
+                      className={`p-2.5 rounded-2xl text-xs leading-relaxed max-w-[85%] ${
                         msg.sender === 'ai'
-                          ? 'bg-[#EBF7F0] text-slate-800 rounded-tl-xs border border-emerald-100'
+                          ? 'bg-[#EBF7F0] text-slate-800 rounded-tl-xs'
                           : 'bg-[#15803D] text-white rounded-tr-xs'
                       }`}
                     >
                       <p>{msg.text}</p>
                       <span
-                        className={`text-[9px] block text-right mt-1 ${
+                        className={`text-[9px] block text-right mt-0.5 ${
                           msg.sender === 'ai' ? 'text-slate-400' : 'text-emerald-200'
                         }`}
                       >
@@ -735,10 +717,10 @@ export default function App() {
                 ))}
 
                 {isAiThinking && (
-                  <div className="flex items-center gap-2 text-xs text-slate-400 pl-11">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" />
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce [animation-delay:0.4s]" />
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400 pl-10">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" />
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce [animation-delay:0.4s]" />
                   </div>
                 )}
               </div>
@@ -753,57 +735,39 @@ export default function App() {
                     if (e.key === 'Enter') handleSendMessage();
                   }}
                   placeholder="Hãy chia sẻ suy nghĩ của em..."
-                  className="w-full pl-3.5 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                  className="w-full pl-3 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
                 />
                 <button
                   onClick={() => handleSendMessage()}
-                  className="absolute right-1.5 top-1.5 p-1.5 bg-[#15803D] hover:bg-[#166534] text-white rounded-lg transition-colors cursor-pointer"
+                  className="absolute right-1.5 top-1.5 p-1 bg-[#10B981] hover:bg-[#059669] text-white rounded-lg transition-colors cursor-pointer"
                   title="Gửi câu trả lời"
                 >
-                  <Send className="w-3.5 h-3.5" />
+                  <Send className="w-3 h-3" />
                 </button>
               </div>
 
               {/* 4 Quick Suggestion Chips (from image) */}
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                <button
-                  onClick={() => handleSendMessage('Ví dụ: số liệu')}
-                  className="px-2.5 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 font-bold text-[11px] rounded-lg border border-slate-200 transition-colors cursor-pointer"
-                >
-                  Ví dụ: số liệu
-                </button>
-
-                <button
-                  onClick={() => handleSendMessage('Kết quả thí nghiệm')}
-                  className="px-2.5 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 font-bold text-[11px] rounded-lg border border-slate-200 transition-colors cursor-pointer"
-                >
-                  Kết quả thí nghiệm
-                </button>
-
-                <button
-                  onClick={() => handleSendMessage('Ý kiến chuyên gia')}
-                  className="px-2.5 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 font-bold text-[11px] rounded-lg border border-slate-200 transition-colors cursor-pointer"
-                >
-                  Ý kiến chuyên gia
-                </button>
-
-                <button
-                  onClick={() => handleSendMessage('Trải nghiệm thực tế')}
-                  className="px-2.5 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 font-bold text-[11px] rounded-lg border border-slate-200 transition-colors cursor-pointer"
-                >
-                  Trải nghiệm thực tế
-                </button>
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {['Ví dụ: số liệu', 'Kết quả thí nghiệm', 'Ý kiến chuyên gia', 'Trải nghiệm thực tế'].map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => handleSendMessage(tag)}
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 font-bold text-[10px] rounded-md border border-slate-200 transition-colors cursor-pointer"
+                  >
+                    {tag}
+                  </button>
+                ))}
               </div>
 
             </section>
 
             {/* WIDGET 2: GÓC GIÁO VIÊN */}
-            <section className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4">
+            <section className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] shadow-2xs space-y-3.5">
               
               {/* Header */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <h2 className="text-base font-black text-slate-900 flex items-center gap-1.5">
                     <span className="text-xl">👥</span>
                     <span>Góc giáo viên</span>
                   </h2>
@@ -817,7 +781,7 @@ export default function App() {
                     sounds.playClick();
                     setShowTeacherModal(true);
                   }}
-                  className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 hover:underline cursor-pointer"
+                  className="text-xs font-bold text-slate-700 hover:text-emerald-700 flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <span>Xem chi tiết</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -825,31 +789,31 @@ export default function App() {
               </div>
 
               {/* Progress Summary: Donut Gauge + Topic Progress */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 
                 {/* Donut Gauge Row */}
-                <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-200/70">
-                  {/* Circular progress visual */}
-                  <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
+                <div className="flex items-center gap-4 p-2 bg-[#F8FAFB] rounded-xl border border-slate-100">
+                  {/* Donut graphic */}
+                  <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                       <path
                         className="text-slate-200"
-                        strokeWidth="3.8"
+                        strokeWidth="3.6"
                         stroke="currentColor"
                         fill="none"
                         d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                       />
                       <path
-                        className="text-emerald-500"
+                        className="text-[#10B981]"
                         strokeDasharray="85, 100"
-                        strokeWidth="3.8"
+                        strokeWidth="3.6"
                         strokeLinecap="round"
                         stroke="currentColor"
                         fill="none"
                         d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                       />
                     </svg>
-                    <span className="absolute font-black text-sm text-slate-900 font-mono">
+                    <span className="absolute font-black text-xs text-slate-900 font-mono">
                       85%
                     </span>
                   </div>
@@ -858,33 +822,33 @@ export default function App() {
                     <div className="text-xs font-black text-slate-900">
                       Hoàn thành thử thách tuần này
                     </div>
-                    <div className="text-xs text-slate-500 font-semibold font-mono">
+                    <div className="text-[11px] text-slate-500 font-semibold font-mono">
                       {TEACHER_DATA.completedStudents} / {TEACHER_DATA.totalStudents} học sinh
                     </div>
                   </div>
                 </div>
 
                 {/* Topic Breakdown List */}
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                     <span>Tiến độ theo chủ đề</span>
-                    <span className="text-[11px] font-extrabold text-slate-500 flex items-center gap-1">
+                    <span className="text-[11px] font-extrabold text-slate-500 flex items-center gap-0.5 cursor-pointer">
                       <span>{TEACHER_DATA.className}</span>
-                      <ChevronDown className="w-3 h-3" />
+                      <ChevronDown className="w-2.5 h-2.5" />
                     </span>
                   </div>
 
-                  <div className="space-y-2 text-xs">
+                  <div className="space-y-1.5 text-xs">
                     {TEACHER_DATA.topics.map((topic, i) => (
-                      <div key={i} className="space-y-1">
+                      <div key={i} className="space-y-0.5">
                         <div className="flex justify-between items-center text-slate-700 font-bold text-[11px]">
                           <span className="flex items-center gap-1.5">
                             <span>{topic.icon}</span>
                             <span>{topic.name}</span>
                           </span>
-                          <span className="font-mono text-slate-900">{topic.percent}%</span>
+                          <span className="font-mono text-slate-800 text-[10px]">{topic.percent}%</span>
                         </div>
-                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full"
                             style={{
@@ -907,66 +871,66 @@ export default function App() {
         </div>
 
         {/* ========================================================= */}
-        {/* FOOTER BAR / BOTTOM CORE VALUES (EXACT REPLICA OF IMAGE)  */}
+        {/* FOOTER VALUES BAR (Exact 4 pillars from image)            */}
         {/* ========================================================= */}
-        <footer className="pt-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <footer className="pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
             
-            {/* Value 1: An toàn số */}
-            <div className="p-3.5 bg-[#E8F5E9] border border-[#C8E6C9] rounded-2xl flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-4 h-4" />
+            {/* 1. An toàn số */}
+            <div className="p-3 bg-[#E8F5E9] border border-[#C8E6C9] rounded-2xl flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-[#15803D] text-white flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-3.5 h-3.5" />
               </div>
               <div>
                 <div className="text-xs font-black text-slate-900 leading-tight">
                   An toàn số
                 </div>
-                <div className="text-[11px] text-slate-600 font-medium mt-0.5">
+                <div className="text-[10px] text-slate-600 font-medium">
                   Sử dụng internet an toàn và có trách nhiệm.
                 </div>
               </div>
             </div>
 
-            {/* Value 2: Tư duy bền vững */}
-            <div className="p-3.5 bg-[#E8F5E9] border border-[#C8E6C9] rounded-2xl flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                <Sprout className="w-4 h-4" />
+            {/* 2. Tư duy bền vững */}
+            <div className="p-3 bg-[#E8F5E9] border border-[#C8E6C9] rounded-2xl flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-[#15803D] text-white flex items-center justify-center shrink-0">
+                <Sprout className="w-3.5 h-3.5" />
               </div>
               <div>
                 <div className="text-xs font-black text-slate-900 leading-tight">
                   Tư duy bền vững
                 </div>
-                <div className="text-[11px] text-slate-600 font-medium mt-0.5">
+                <div className="text-[10px] text-slate-600 font-medium">
                   Hôm nay em học – ngày mai Trái Đất tươi xanh hơn.
                 </div>
               </div>
             </div>
 
-            {/* Value 3: Học bằng hành động */}
-            <div className="p-3.5 bg-[#E8F5E9] border border-[#C8E6C9] rounded-2xl flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                <Users className="w-4 h-4" />
+            {/* 3. Học bằng hành động */}
+            <div className="p-3 bg-[#E8F5E9] border border-[#C8E6C9] rounded-2xl flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-[#15803D] text-white flex items-center justify-center shrink-0">
+                <Users className="w-3.5 h-3.5" />
               </div>
               <div>
                 <div className="text-xs font-black text-slate-900 leading-tight">
                   Học bằng hành động
                 </div>
-                <div className="text-[11px] text-slate-600 font-medium mt-0.5">
+                <div className="text-[10px] text-slate-600 font-medium">
                   Những lựa chọn nhỏ tạo nên thay đổi lớn.
                 </div>
               </div>
             </div>
 
-            {/* Value 4: Vì một hành tinh xanh */}
-            <div className="p-3.5 bg-[#E8F5E9] border border-[#C8E6C9] rounded-2xl flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center shrink-0">
-                <Heart className="w-4 h-4 fill-white" />
+            {/* 4. Vì một hành tinh xanh */}
+            <div className="p-3 bg-[#E8F5E9] border border-[#C8E6C9] rounded-2xl flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-[#0284C7] text-white flex items-center justify-center shrink-0 text-xs">
+                🌍
               </div>
               <div>
                 <div className="text-xs font-black text-slate-900 leading-tight">
                   Vì một hành tinh
                 </div>
-                <div className="text-[11px] text-slate-600 font-medium mt-0.5">
+                <div className="text-[10px] text-slate-600 font-medium">
                   xanh hơn cho thế hệ mai sau 💚
                 </div>
               </div>
@@ -978,7 +942,7 @@ export default function App() {
       </main>
 
       {/* ========================================================= */}
-      {/* MODALS                                                    */}
+      {/* INTERACTIVE MODALS                                        */}
       {/* ========================================================= */}
       {activeChallenge && (
         <ChallengeModal
