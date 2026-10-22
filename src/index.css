@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+@layer utilities {
+  /* 3D Cartoon Claymorphism & Dimensional Buttons */
+  .btn-3d-amber {
+    box-shadow: 0 6px 0 #D97706, 0 10px 15px -3px rgba(217, 119, 6, 0.3);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn-3d-amber:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 #D97706, 0 14px 20px -3px rgba(217, 119, 6, 0.35);
+  }
+  .btn-3d-amber:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #D97706, 0 4px 6px -1px rgba(217, 119, 6, 0.2);
+  }
+
+  .btn-3d-blue {
+    box-shadow: 0 6px 0 #2563EB, 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn-3d-blue:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 #2563EB, 0 14px 20px -3px rgba(37, 99, 235, 0.35);
+  }
+  .btn-3d-blue:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #2563EB, 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+  }
+
+  .btn-3d-emerald {
+    box-shadow: 0 6px 0 #059669, 0 10px 15px -3px rgba(5, 150, 105, 0.3);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn-3d-emerald:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 #059669, 0 14px 20px -3px rgba(5, 150, 105, 0.35);
+  }
+  .btn-3d-emerald:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #059669, 0 4px 6px -1px rgba(5, 150, 105, 0.2);
+  }
+
+  .btn-3d-purple {
+    box-shadow: 0 6px 0 #7C3AED, 0 10px 15px -3px rgba(124, 58, 237, 0.3);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn-3d-purple:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 #7C3AED, 0 14px 20px -3px rgba(124, 58, 237, 0.35);
+  }
+  .btn-3d-purple:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #7C3AED, 0 4px 6px -1px rgba(124, 58, 237, 0.2);
+  }
+
+  .btn-3d-rose {
+    box-shadow: 0 6px 0 #E11D48, 0 10px 15px -3px rgba(225, 29, 72, 0.3);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn-3d-rose:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 #E11D48, 0 14px 20px -3px rgba(225, 29, 72, 0.35);
+  }
+  .btn-3d-rose:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #E11D48, 0 4px 6px -1px rgba(225, 29, 72, 0.2);
+  }
+
+  .btn-3d-slate {
+    box-shadow: 0 5px 0 #94A3B8, 0 8px 12px -3px rgba(148, 163, 184, 0.25);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn-3d-slate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 0 #94A3B8, 0 12px 16px -3px rgba(148, 163, 184, 0.3);
+  }
+  .btn-3d-slate:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #94A3B8, 0 3px 6px -1px rgba(148, 163, 184, 0.2);
+  }
+
+  .clay-card {
+    background: #FFFFFF;
+    border-radius: 1.75rem;
+    box-shadow: 0 14px 28px -6px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+    border: 3px solid #F1F5F9;
+  }
+
+  .clay-card-colored {
+    border-radius: 1.75rem;
+    box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.07);
+  }
+}
+
+@keyframes gentle-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1.5deg);
+  }
+}
+
+@keyframes wiggle-slow {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-3deg);
+  }
+  75% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes bubble-rise {
+  0% {
+    transform: translateY(100%) scale(0.6);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-120%) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.animate-float {
+  animation: gentle-float 4s ease-in-out infinite;
+}
+
+.animate-wiggle {
+  animation: wiggle-slow 2.5s ease-in-out infinite;
+}
+
+.animate-bubble-1 {
+  animation: bubble-rise 2.8s infinite linear;
+}
+.animate-bubble-2 {
+  animation: bubble-rise 3.4s infinite linear 0.9s;
+}
+.animate-bubble-3 {
+  animation: bubble-rise 2.2s infinite linear 1.5s;
+}
