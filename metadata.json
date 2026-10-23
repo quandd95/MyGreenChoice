@@ -1,8 +1,9 @@
 {
-  "name": "Green Choice Lab AI - Phòng Thí Nghiệm Lựa Chọn Bền Vững",
-  "description": "Nền tảng giáo dục học tập phát triển bền vững phong cách Cartoon 3D: Khám phá vấn đề, Cân nhắc lựa chọn, Kiểm chứng bằng chứng và Hành động có trách nhiệm.",
+  "name": "AI-IMPACT Em Kiến Tạo",
+  "description": "Khám phá vấn đề quanh em – Tư duy cùng AI – Hành động tạo thay đổi tích cực. Nền tảng giáo dục học tập phát triển bền vững 8 bước.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
+
 
 

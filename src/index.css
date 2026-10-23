@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@layer base {
+  body {
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+}
+
 @layer utilities {
   /* 3D Cartoon Claymorphism & Dimensional Buttons */
   .btn-3d-amber {

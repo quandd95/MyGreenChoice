@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection (allows user registration, teacher/student profile sync)
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // Challenges catalog
+    match /challenges/{challengeId} {
+      allow read, write: if true;
+    }
+
+    // Projects (8-step student projects & teacher evaluations)
+    match /projects/{projectId} {
+      allow read, write: if true;
+    }
+  }
+}

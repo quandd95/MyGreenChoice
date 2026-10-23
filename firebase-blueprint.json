@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile with role-based access for students and teachers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["student", "teacher", "guest"] },
+        "classId": { "type": "string", "maxLength": 20 },
+        "groupName": { "type": "string", "maxLength": 50 },
+        "avatar": { "type": "string", "maxLength": 255 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "email", "displayName", "role"]
+    },
+    "Challenge": {
+      "title": "Challenge Item",
+      "description": "Educational challenges for students to select and solve",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string" },
+        "duration": { "type": "string" },
+        "description": { "type": "string", "maxLength": 1000 },
+        "targetGoal": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["id", "title", "category"]
+    },
+    "Project": {
+      "title": "Student Project",
+      "description": "8-step action project created and maintained by student teams",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "challengeId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 200 },
+        "groupName": { "type": "string", "maxLength": 50 },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "classId": { "type": "string" },
+        "currentStep": { "type": "number" },
+        "status": { "type": "string", "enum": ["draft", "in_progress", "pending_approval", "completed"] },
+        "stepData": { "type": "object" },
+        "teacherFeedback": { "type": "string", "maxLength": 1000 },
+        "teacherApproved": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "title", "groupName", "studentId", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles partitioned by auth UID"
+    },
+    "/challenges/{challengeId}": {
+      "schema": "Challenge",
+      "description": "Public educational challenges catalog"
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Action projects with 8-step tracking"
+    }
+  }
+}

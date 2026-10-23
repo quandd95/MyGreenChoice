@@ -1,964 +1,667 @@
 /**
- * Green Choice Lab AI - Phòng Thí Nghiệm Lựa Chọn Bền Vững
- * Exact replica of the reference design with full interactive features.
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ * AI-IMPACT EM KIẾN TẠO - Nền tảng học tập dự án cùng AI
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  ChevronDown,
-  Bell,
-  ArrowRight,
-  ShieldCheck,
-  Sprout,
-  Users,
-  Send,
-  CheckCircle,
-  Lightbulb,
+  Home,
+  Trophy,
+  Layers,
+  Bot,
   Search,
-  Brain,
-  Leaf,
+  FileText,
   Volume2,
   VolumeX,
-  Lock,
-  Star,
-  MoreVertical,
-  RotateCw,
-  ArrowLeft,
-  ArrowRight as BrowserForward,
+  LogIn,
+  LogOut,
+  ChevronDown,
+  Menu,
+  X,
+  Sparkles,
+  BookOpen,
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
-import { NavTab, ChallengeItem, StudentProfile, ChatMessage } from './types/greenChoice';
-import { INITIAL_STUDENT, CHALLENGES, TEACHER_DATA } from './data/greenChoiceData';
-import { ChallengeModal } from './components/ChallengeModal';
-import { TeacherModal } from './components/TeacherModal';
-import { ProfileModal } from './components/ProfileModal';
+import { AppView, UserRole, UserProfile, ProjectData, ChallengeItem } from './types/aiImpact';
+import {
+  INITIAL_STUDENT_USER,
+  INITIAL_TEACHER_USER,
+  GUEST_USER,
+  INITIAL_PROJECT,
+} from './data/aiImpactData';
+import { HomeView } from './components/HomeView';
+import { ChallengesView } from './components/ChallengesView';
+import { ProjectSpaceView } from './components/ProjectSpaceView';
+import { AILabView } from './components/AILabView';
+import { AICheckView } from './components/AICheckView';
+import { ReportView } from './components/ReportView';
+import { TeacherDashboardView } from './components/TeacherDashboardView';
+import { AuthModal } from './components/AuthModal';
+import { GuideModal } from './components/GuideModal';
 import { sounds } from './utils/soundEffects';
+import { auth, db } from './firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 
 export default function App() {
-  // Navigation & Modals
-  const [activeNav, setActiveNav] = useState<NavTab>('home');
-  const [selectedGrade, setSelectedGrade] = useState('Lớp 5');
-  const [showGradeMenu, setShowGradeMenu] = useState(false);
-  const [activeChallenge, setActiveChallenge] = useState<ChallengeItem | null>(null);
-  const [showTeacherModal, setShowTeacherModal] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  // Navigation & User State (Defaults to null - unauthenticated on first visit)
+  const [currentView, setCurrentView] = useState<AppView>('home');
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [currentProject, setCurrentProject] = useState<ProjectData>(INITIAL_PROJECT);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authInitialRole, setAuthInitialRole] = useState<UserRole>('student');
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [hasUnreadNotification, setHasUnreadNotification] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [notification, setNotification] = useState<string | null>(null);
 
-  // Student progress state
-  const [student, setStudent] = useState<StudentProfile>(INITIAL_STUDENT);
-  const [challenges, setChallenges] = useState<ChallengeItem[]>(CHALLENGES);
-
-  // AI Companion Chat State
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: 'msg-1',
-      sender: 'ai',
-      text: 'Em đã dựa vào bằng chứng nào để đưa ra lựa chọn này?',
-      timestamp: '10:24',
-    },
-  ]);
-  const [chatInput, setChatInput] = useState('');
-  const [isAiThinking, setIsAiThinking] = useState(false);
-
-  // Audio mute handler
-  const handleToggleSound = () => {
+  // Sound toggle
+  const toggleSound = () => {
     const next = !isMuted;
     setIsMuted(next);
     sounds.isMuted = next;
     if (!next) sounds.playClick();
   };
 
-  // Challenge Completed Handler with Victory Confetti
-  const handleCompleteChallenge = (challengeId: string, earnedPoints: number) => {
-    // Trigger Victory Confetti Animation
+  // Check saved session on mount
+  useEffect(() => {
     try {
-      confetti({
-        particleCount: 100,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#10B981', '#059669', '#34D399', '#FBBF24', '#60A5FA', '#F59E0B'],
-      });
-
-      setTimeout(() => {
-        confetti({
-          particleCount: 50,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0, y: 0.7 },
-          colors: ['#10B981', '#34D399', '#FBBF24'],
-        });
-        confetti({
-          particleCount: 50,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1, y: 0.7 },
-          colors: ['#059669', '#60A5FA', '#FBBF24'],
-        });
-      }, 250);
-    } catch {
-      // Audio or canvas fallback
-    }
-
-    setChallenges((prev) =>
-      prev.map((c) => (c.id === challengeId ? { ...c, completed: true } : c))
-    );
-    setStudent((prev) => {
-      const nextPoints = Math.min(prev.maxPoints, prev.currentPoints + earnedPoints);
-      return {
-        ...prev,
-        currentPoints: nextPoints,
-        skills: {
-          ...prev.skills,
-          analysis: Math.min(5, prev.skills.analysis + 1),
-          greenAction: Math.min(5, prev.skills.greenAction + 1),
-        },
-      };
-    });
-    setActiveChallenge(null);
-  };
-
-  // AI Companion Chat handler
-  const handleSendMessage = (textToSend?: string) => {
-    const messageText = textToSend || chatInput.trim();
-    if (!messageText) return;
-
-    sounds.playClick();
-    const userMsg: ChatMessage = {
-      id: `usr-${Date.now()}`,
-      sender: 'user',
-      text: messageText,
-      timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setChatMessages((prev) => [...prev, userMsg]);
-    if (!textToSend) setChatInput('');
-    setIsAiThinking(true);
-
-    // AI automated thoughtful response
-    setTimeout(() => {
-      sounds.playStarCoin();
-      let aiReply = 'Rất tuyệt vời! Em đã biết vận dụng bằng chứng khoa học để ra quyết định xanh.';
-      if (messageText.includes('số liệu')) {
-        aiReply = 'Chính xác! Dựa vào số liệu cụ thể (như 365 chai nhựa/năm) giúp chúng ta thấy rõ tác động thực tế đến môi trường!';
-      } else if (messageText.includes('thí nghiệm')) {
-        aiReply = 'Thực nghiệm là bằng chứng vững chắc nhất! Em đã quan sát rất tỉ mỉ trong phòng thí nghiệm hôm nay!';
-      } else if (messageText.includes('chuyên gia')) {
-        aiReply = 'Rất đúng đắn! Lắng nghe các nhà khoa học và chuyên gia môi trường giúp chúng ta có góc nhìn chuẩn xác và tin cậy.';
-      } else if (messageText.includes('thực tế')) {
-        aiReply = 'Trải nghiệm thực tế tại trường và ở nhà là bài học sống động nhất để hình thành lối sống xanh bền vững!';
+      const savedUserStr = localStorage.getItem('ai_impact_current_user');
+      if (savedUserStr) {
+        const savedUser = JSON.parse(savedUserStr) as UserProfile;
+        if (savedUser && savedUser.id) {
+          setCurrentUser(savedUser);
+          if (savedUser.role === 'teacher') {
+            setCurrentView('teacher_dashboard');
+          }
+        }
       }
+    } catch {}
+  }, []);
 
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: `ai-${Date.now()}`,
-          sender: 'ai',
-          text: aiReply,
-          timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
-      setIsAiThinking(false);
+  // Listen to Firebase Auth state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
+          if (snap.exists()) {
+            const profile = snap.data() as UserProfile;
+            setCurrentUser(profile);
+            localStorage.setItem('ai_impact_current_user', JSON.stringify(profile));
+            if (profile.role === 'teacher') {
+              setCurrentView('teacher_dashboard');
+            }
+          }
+        } catch {
+          // fallback
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
-      setStudent((prev) => ({
-        ...prev,
-        currentPoints: Math.min(prev.maxPoints, prev.currentPoints + 5),
-        skills: {
-          ...prev.skills,
-          criticalThinking: Math.min(5, prev.skills.criticalThinking + 1),
-        },
-      }));
-    }, 900);
+  // Listen to student's active project updates from Firestore
+  useEffect(() => {
+    if (currentProject.id) {
+      const unsub = onSnapshot(doc(db, 'projects', currentProject.id), (snap) => {
+        if (snap.exists()) {
+          setCurrentProject({ id: snap.id, ...snap.data() } as ProjectData);
+        }
+      });
+      return () => unsub();
+    }
+  }, [currentProject.id]);
+
+  // Quick Role Switching
+  const handleSwitchRole = (newRole: UserRole) => {
+    sounds.playStarCoin();
+    setShowAccountMenu(false);
+    if (newRole === 'student') {
+      setCurrentUser(INITIAL_STUDENT_USER);
+      setCurrentView('home');
+      setNotification('Đã đăng nhập vai trò: Học sinh (Nguyễn Minh Anh) 🎒');
+    } else if (newRole === 'teacher') {
+      setCurrentUser(INITIAL_TEACHER_USER);
+      setCurrentView('teacher_dashboard');
+      setNotification('Đã đăng nhập vai trò: Giáo viên (Cô Hoàng Yến) 👩‍🏫');
+    } else {
+      setCurrentUser(GUEST_USER);
+      setCurrentView('home');
+      setNotification('Đã đăng nhập vai trò: Khách tham quan 🌟');
+    }
+    setTimeout(() => setNotification(null), 3000);
   };
+
+  // Sign out handler
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch {}
+    sounds.playClick();
+    try {
+      localStorage.removeItem('ai_impact_current_user');
+    } catch {}
+    setCurrentUser(null);
+    setCurrentView('home');
+    setShowAccountMenu(false);
+    setNotification('Đã đăng xuất tài khoản thành công.');
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  // Open Auth Modal with specific role
+  const handleOpenAuth = (role: UserRole = 'student') => {
+    sounds.playClick();
+    setAuthInitialRole(role);
+    setIsAuthModalOpen(true);
+  };
+
+  // Select a challenge to start a project
+  const handleSelectChallenge = (challenge: ChallengeItem) => {
+    sounds.playClick();
+    setCurrentProject((prev) => ({
+      ...prev,
+      title: challenge.title,
+      currentStep: 1,
+      status: 'in_progress',
+    }));
+    // If not logged in, auto start session as student
+    if (!currentUser) {
+      setCurrentUser(INITIAL_STUDENT_USER);
+    }
+    setCurrentView('project_space');
+  };
+
+  // =========================================================
+  // CASE 1: TEACHER ROLE (Render full Teacher layout & header)
+  // =========================================================
+  if (currentUser?.role === 'teacher') {
+    return (
+      <div className="h-screen flex flex-col bg-[#F4F7FC] text-slate-800 font-['Nunito',sans-serif] overflow-hidden">
+        {/* Toast Notification */}
+        {notification && (
+          <div className="fixed top-18 right-5 z-50 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-2xl shadow-lg border border-slate-700 animate-in fade-in slide-in-from-top-2">
+            {notification}
+          </div>
+        )}
+
+        <TeacherDashboardView
+          onSelectProject={(proj) => {
+            setCurrentProject(proj);
+          }}
+          onNavigate={(view) => {
+            if (view !== 'teacher_dashboard') {
+              setCurrentView(view);
+            }
+          }}
+          currentUser={currentUser}
+          onSwitchRole={handleSwitchRole}
+          onSignOut={handleSignOut}
+          isMuted={isMuted}
+          toggleSound={toggleSound}
+        />
+
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          initialRole={authInitialRole}
+          onClose={() => setIsAuthModalOpen(false)}
+          onLoginSuccess={(user) => {
+            setCurrentUser(user);
+            setNotification(`Đăng nhập thành công với vai trò: ${user.role === 'teacher' ? 'Giáo viên' : 'Học sinh'}!`);
+            setTimeout(() => setNotification(null), 3000);
+          }}
+        />
+      </div>
+    );
+  }
+
+  // =========================================================
+  // CASE 2: UNLOGGED / STUDENT / GUEST ROLE
+  // =========================================================
+  
+  // Navigation items for students & visitors (matching Image 1 P01)
+  const navItems = [
+    { id: 'home' as AppView, label: 'Trang chủ', icon: Home },
+    { id: 'challenges' as AppView, label: 'Thử thách', icon: Trophy },
+    { id: 'ai_lab' as AppView, label: 'AI Lab', icon: Bot },
+    { id: 'project_space' as AppView, label: 'Dự án của em', icon: Layers },
+    ...(currentUser ? [
+      { id: 'ai_check' as AppView, label: 'AI Check', icon: Search },
+      { id: 'report' as AppView, label: 'Báo cáo', icon: FileText },
+    ] : []),
+  ];
 
   return (
-    <div className="min-h-screen bg-[#F0F5F2] text-slate-800 font-['Outfit',sans-serif] selection:bg-emerald-200">
+    <div className="min-h-screen bg-[#F2F7F4] text-slate-800 font-['Nunito',sans-serif] selection:bg-emerald-200">
       
-      {/* ========================================================= */}
-      {/* MACOS BROWSER BAR (Matching the mockup frame)             */}
-      {/* ========================================================= */}
-      <div className="bg-[#E5E9EC] border-b border-[#CBD5E1] px-4 py-2 flex items-center justify-between text-xs select-none">
-        <div className="flex items-center gap-2">
-          {/* Traffic light dots */}
-          <div className="flex items-center gap-1.5 mr-3">
-            <span className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] inline-block" />
-            <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123] inline-block" />
-            <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29] inline-block" />
-          </div>
-
-          <div className="hidden sm:flex items-center gap-2 text-slate-500">
-            <ArrowLeft className="w-3.5 h-3.5 cursor-pointer hover:text-slate-700" />
-            <BrowserForward className="w-3.5 h-3.5 text-slate-300" />
-            <RotateCw className="w-3.5 h-3.5 cursor-pointer hover:text-slate-700 ml-1" />
-          </div>
+      {/* Toast Notification */}
+      {notification && (
+        <div className="fixed top-18 right-5 z-50 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-2xl shadow-lg border border-slate-700 animate-in fade-in slide-in-from-top-2">
+          {notification}
         </div>
+      )}
 
-        {/* Address bar pill */}
-        <div className="flex-1 max-w-xl mx-4 bg-white rounded-md px-3 py-1 flex items-center gap-2 border border-[#CBD5E1] text-[11px] text-slate-700 shadow-2xs">
-          <Lock className="w-3 h-3 text-slate-400" />
-          <span className="font-mono text-slate-600">https://www.greenchoicelab.ai</span>
-        </div>
-
-        <div className="flex items-center gap-3 text-slate-500">
-          <Star className="w-3.5 h-3.5 cursor-pointer hover:text-amber-500" />
-          <MoreVertical className="w-3.5 h-3.5 cursor-pointer hover:text-slate-700" />
-        </div>
-      </div>
-
-      {/* ========================================================= */}
-      {/* APP TOP NAVIGATION BAR                                    */}
-      {/* ========================================================= */}
-      <header className="sticky top-0 z-40 bg-white border-b border-[#E2E8F0] shadow-xs">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-8 h-17 flex items-center justify-between gap-4">
+      {/* TOP NAVIGATION BAR (Faithful to Image 1 P01) */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] shadow-xs">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-17 flex items-center justify-between gap-4">
           
-          {/* Left: Brand Logo + Grade Dropdown */}
+          {/* Left: Brand Logo & Title */}
           <div className="flex items-center gap-3">
-            {/* Logo */}
-            <div 
+            <div
               onClick={() => {
                 sounds.playClick();
-                setActiveNav('home');
+                setCurrentView('home');
               }}
-              className="flex items-center gap-2.5 cursor-pointer select-none group"
+              className="flex items-center gap-3 cursor-pointer select-none group"
             >
-              <img
-                src="/assets/extracted/app_logo.png"
-                alt="Green Choice Lab AI"
-                className="w-9 h-9 object-contain group-hover:scale-105 transition-transform"
-              />
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 p-0.5 shadow-xs group-hover:scale-105 transition-transform shrink-0">
+                <img
+                  src="/assets/ai_impact/logo_banner.png"
+                  alt="AI-IMPACT Logo"
+                  className="w-full h-full object-contain rounded-[14px] bg-white p-1"
+                />
+              </div>
+
               <div className="flex flex-col">
                 <span className="text-base sm:text-lg font-black text-[#14532D] tracking-tight leading-tight">
-                  GREEN CHOICE
+                  AI-IMPACT
                 </span>
-                <span className="text-xs sm:text-sm font-black text-[#15803D] tracking-wider -mt-0.5 flex items-center gap-0.5">
-                  LAB AI
-                  <span className="text-xs">🍃</span>
+                <span className="text-xs sm:text-sm font-black text-[#15803D] tracking-wider -mt-0.5 flex items-center gap-1">
+                  EM KIẾN TẠO
+                  <span className="text-xs">🌱</span>
                 </span>
               </div>
             </div>
-
-            {/* Grade Selector Pill */}
-            <div className="relative ml-2">
-              <button
-                onClick={() => {
-                  sounds.playClick();
-                  setShowGradeMenu(!showGradeMenu);
-                }}
-                className="flex items-center gap-1 px-3 py-1 bg-[#E0F2FE] hover:bg-[#BAE6FD] text-[#0284C7] text-xs font-black rounded-full transition-colors cursor-pointer"
-              >
-                <span>{selectedGrade}</span>
-                <ChevronDown className="w-3.5 h-3.5" />
-              </button>
-
-              {showGradeMenu && (
-                <div className="absolute top-full mt-1.5 left-0 w-28 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50 animate-in fade-in zoom-in-95 duration-150">
-                  {['Lớp 3', 'Lớp 4', 'Lớp 5'].map((grade) => (
-                    <button
-                      key={grade}
-                      onClick={() => {
-                        sounds.playClick();
-                        setSelectedGrade(grade);
-                        setShowGradeMenu(false);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 text-xs font-bold transition-colors ${
-                        selectedGrade === grade ? 'bg-sky-100 text-sky-800' : 'text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      {grade}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Center Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-6">
-            <button
-              onClick={() => {
-                sounds.playClick();
-                setActiveNav('home');
-              }}
-              className={`flex items-center gap-1.5 text-sm font-black transition-colors ${
-                activeNav === 'home'
-                  ? 'text-[#15803D]'
-                  : 'text-slate-700 hover:text-slate-900'
-              }`}
-            >
-              <span className="text-base">🏠</span>
-              <span>Trang chủ</span>
-            </button>
+          {/* Center Navigation Links (Matching Image 1 P01 Header) */}
+          <nav className="hidden lg:flex items-center gap-1.5">
+            {navItems.map((item) => {
+              const isActive = currentView === item.id;
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    sounds.playClick();
+                    setCurrentView(item.id);
+                  }}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-[#15803D] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
 
+            {/* Hướng dẫn Link */}
             <button
               onClick={() => {
                 sounds.playClick();
-                setActiveNav('challenges');
+                setIsGuideOpen(true);
               }}
-              className={`flex items-center gap-1.5 text-sm font-bold transition-colors ${
-                activeNav === 'challenges'
-                  ? 'text-[#15803D]'
-                  : 'text-slate-700 hover:text-slate-900'
-              }`}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl text-xs font-black text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
             >
-              <span className="text-base">🏆</span>
-              <span>Thử thách</span>
-            </button>
-
-            <button
-              onClick={() => {
-                sounds.playClick();
-                setShowTeacherModal(true);
-              }}
-              className="flex items-center gap-1.5 text-sm font-bold text-slate-700 hover:text-slate-900 transition-colors"
-            >
-              <span className="text-base">👥</span>
-              <span>Góc giáo viên</span>
-            </button>
-
-            <button
-              onClick={() => {
-                sounds.playClick();
-                setShowProfileModal(true);
-              }}
-              className="flex items-center gap-1.5 text-sm font-bold text-slate-700 hover:text-slate-900 transition-colors"
-            >
-              <span className="text-base">👤</span>
-              <span>Hồ sơ của em</span>
+              <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Hướng dẫn</span>
             </button>
           </nav>
 
-          {/* Right: Sound, Notification Bell, User Avatar */}
-          <div className="flex items-center gap-3">
+          {/* Right Actions: Sound & Auth States */}
+          <div className="flex items-center gap-2.5">
+            
             {/* Audio Toggle */}
             <button
-              onClick={handleToggleSound}
-              className={`p-1.5 rounded-lg transition-colors border ${
+              onClick={toggleSound}
+              className={`p-2 rounded-xl transition-colors border cursor-pointer ${
                 isMuted
                   ? 'bg-slate-100 text-slate-400 border-slate-200'
-                  : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
               }`}
               title={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
             >
-              {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+              {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
 
-            {/* Notification Bell */}
-            <button
-              onClick={() => {
-                sounds.playClick();
-                setHasUnreadNotification(false);
-              }}
-              className="relative p-1.5 text-slate-600 hover:text-slate-900 transition-colors"
-              title="Thông báo mới"
-            >
-              <Bell className="w-4 h-4 text-rose-500" />
-              {hasUnreadNotification && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full" />
-              )}
-            </button>
+            {/* ========================================================= */}
+            {/* AUTH STATE A: CHƯA ĐĂNG NHẬP (currentUser === null)        */}
+            {/* HIỆN NÚT "ĐĂNG NHẬP" VÀ "TRẢI NGHIỆM" THEO ẢNH 1 P01      */}
+            {/* ========================================================= */}
+            {!currentUser ? (
+              <div className="flex items-center gap-2">
+                {/* Nút Đăng nhập */}
+                <button
+                  onClick={() => handleOpenAuth('student')}
+                  className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 font-extrabold text-xs rounded-2xl border-2 border-slate-200 shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Đăng nhập</span>
+                </button>
 
-            {/* User Profile Info */}
-            <div 
-              onClick={() => {
-                sounds.playClick();
-                setShowProfileModal(true);
-              }}
-              className="flex items-center gap-2 cursor-pointer select-none pl-1"
-            >
-              <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-300 shrink-0">
-                <img
-                  src="/assets/extracted/top_avatar.png"
-                  alt={student.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="hidden sm:flex flex-col text-left">
-                <span className="text-xs font-black text-slate-900 leading-tight">
-                  {student.name}
-                </span>
-                <span className="text-[11px] font-bold text-amber-500 flex items-center gap-0.5 -mt-0.5">
-                  <span>⭐ {student.grade}</span>
-                  <ChevronDown className="w-2.5 h-2.5 text-slate-400" />
-                </span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </header>
-
-      {/* ========================================================= */}
-      {/* MAIN CONTENT AREA                                         */}
-      {/* ========================================================= */}
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-8 py-5 space-y-5">
-        
-        {/* ========================================================= */}
-        {/* HERO BANNER SECTION (Exact Artwork & Interactive Buttons) */}
-        {/* ========================================================= */}
-        <section className="relative overflow-hidden rounded-3xl border-2 border-[#BFEAD3] shadow-sm bg-white">
-          <img
-            src="/assets/extracted/hero_full_banner.png"
-            alt="Green Choice Lab AI"
-            className="w-full h-auto block select-none"
-          />
-
-          {/* Clickable interactive overlay buttons matching exact design hotspots */}
-          <button
-            onClick={() => {
-              sounds.playClick();
-              setActiveChallenge(challenges[0]);
-            }}
-            className="absolute left-[2.8%] bottom-[19%] w-[11.2%] h-[16%] opacity-0 hover:opacity-20 bg-white rounded-full cursor-pointer transition-opacity"
-            title="Bắt đầu khám phá"
-            aria-label="Bắt đầu khám phá"
-          />
-
-          <button
-            onClick={() => {
-              sounds.playClick();
-              setActiveNav('challenges');
-            }}
-            className="absolute left-[14.8%] bottom-[19%] w-[7.8%] h-[16%] opacity-0 hover:opacity-20 bg-emerald-900 rounded-full cursor-pointer transition-opacity"
-            title="Xem thử thách"
-            aria-label="Xem thử thách"
-          />
-        </section>
-
-        {/* ========================================================= */}
-        {/* MAIN TWO-COLUMN WORKSPACE                                 */}
-        {/* ========================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          
-          {/* ======================================================= */}
-          {/* LEFT COLUMN: CHALLENGES & STUDENT PROFILE (~65% width)   */}
-          {/* ======================================================= */}
-          <div className="lg:col-span-8 space-y-5">
-            
-            {/* CARD 1: THỬ THÁCH HÔM NAY */}
-            <section className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] shadow-2xs space-y-3">
-              
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-1.5">
-                    <span className="text-xl">🏆</span>
-                    <span>Thử thách hôm nay</span>
-                  </h2>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Cùng khám phá và đưa ra những lựa chọn bền vững!
-                  </p>
-                </div>
-
+                {/* Nút Trải nghiệm (1-chạm vào ngay như trong ảnh 1 P01) */}
                 <button
                   onClick={() => {
-                    sounds.playClick();
-                    setActiveNav('challenges');
+                    sounds.playStarCoin();
+                    setCurrentUser(INITIAL_STUDENT_USER);
+                    setNotification('Chào mừng em Nguyễn Minh Anh bắt đầu trải nghiệm! 🎒');
+                    setTimeout(() => setNotification(null), 3000);
                   }}
-                  className="text-xs font-bold text-slate-700 hover:text-emerald-700 flex items-center gap-1 transition-colors cursor-pointer"
+                  className="px-4 py-2 bg-[#15803D] hover:bg-[#166534] text-white font-black text-xs rounded-2xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  <span>Xem tất cả thử thách</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Trải nghiệm</span>
                 </button>
               </div>
-
-              {/* 3 Challenge Cards Grid (Matching reference layout) */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
-                {challenges.slice(0, 3).map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-[#FCFDFB] rounded-2xl p-2.5 border border-[#E2EAE5] flex flex-col justify-between hover:shadow-sm transition-shadow group"
-                  >
-                    <div>
-                      {/* Exact Clean Cropped Banner Graphic */}
-                      <div className="relative rounded-xl overflow-hidden aspect-[326/74] bg-[#E8F4EC] mb-2.5 border border-[#E2EAE5]/60">
-                        <img
-                          src={item.image}
-                          alt={item.title}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-102"
-                        />
-                        {item.completed && (
-                          <div className="absolute top-1.5 right-1.5 px-2 py-0.5 bg-emerald-600 text-white font-black text-[9px] rounded-full shadow-xs flex items-center gap-1">
-                            <CheckCircle className="w-2.5 h-2.5" /> Đã xong
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Title & Description */}
-                      <h3 className="text-xs sm:text-sm font-black text-[#0F172A] leading-snug line-clamp-2">
-                        {item.title}
-                      </h3>
-                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                        {item.description}
-                      </p>
-                    </div>
-
-                    {/* Capsule Pill Button (Green like image) */}
-                    <div className="pt-2.5">
-                      <button
-                        onClick={() => {
-                          sounds.playClick();
-                          setActiveChallenge(item);
-                        }}
-                        className="px-4 py-1.5 bg-[#15803D] hover:bg-[#166534] text-white font-bold text-xs rounded-full flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-                      >
-                        <span>Khám phá</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-            </section>
-
-            {/* CARD 2: HỒ SƠ NHÀ THÁM HIỂM XANH */}
-            <section className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] shadow-2xs space-y-3">
-              
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-1.5">
-                  <span className="text-xl">🏕️</span>
-                  <span>Hồ sơ Nhà thám hiểm xanh</span>
-                </h2>
-
+            ) : (
+              /* ========================================================= */
+              /* AUTH STATE B: ĐÃ ĐĂNG NHẬP (ẨN NÚT ĐĂNG NHẬP, HIỆN AVATAR) */
+              /* ========================================================= */
+              <div className="relative">
                 <button
-                  onClick={() => {
-                    sounds.playClick();
-                    setShowProfileModal(true);
-                  }}
-                  className="text-xs font-bold text-slate-700 hover:text-emerald-700 flex items-center gap-1 transition-colors cursor-pointer"
+                  onClick={() => setShowAccountMenu(!showAccountMenu)}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-2xl border border-emerald-200 bg-white hover:bg-emerald-50/60 transition-colors cursor-pointer select-none shadow-2xs"
+                  title="Tài khoản của bạn"
                 >
-                  <span>Xem chi tiết</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Sub-grid: Left Student Card & Right 4 Competency Bars */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                
-                {/* Left Mini Profile Box */}
-                <div className="md:col-span-5 flex items-center gap-3 p-3 bg-white rounded-2xl border border-slate-100">
-                  <div className="w-14 h-14 rounded-full overflow-hidden border border-emerald-300 shrink-0 shadow-2xs">
+                  <div className="w-7 h-7 rounded-full overflow-hidden bg-emerald-100 border border-emerald-300 shrink-0">
                     <img
-                      src="/assets/extracted/student_big_avatar.png"
-                      alt={student.name}
+                      src={
+                        currentUser.avatar ||
+                        (currentUser.role === 'guest'
+                          ? '/assets/ai_impact/guest_icon.png'
+                          : '/assets/ai_impact/student_icon.png')
+                      }
+                      alt={currentUser.displayName}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <div className="text-xs sm:text-sm font-black text-slate-900">
-                      {student.name}
-                    </div>
-                    <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-800">
-                      <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px]">
-                        🌱
-                      </span>
-                      <span>Cấp độ {student.level}</span>
-                    </div>
-                    <div className="text-[10px] text-slate-500 font-medium -mt-0.5">
-                      {student.levelTitle}
-                    </div>
-                    {/* Points bar */}
-                    <div className="space-y-0.5 pt-0.5">
-                      <div className="text-[10px] font-mono font-bold text-slate-500">
-                        {student.currentPoints} / {student.maxPoints} điểm
-                      </div>
-                      <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-[#15803D] rounded-full transition-all duration-500"
-                          style={{ width: `${(student.currentPoints / student.maxPoints) * 100}%` }}
-                        />
-                      </div>
-                    </div>
+                  <div className="hidden sm:flex flex-col text-left">
+                    <span className="text-xs font-black text-slate-900 leading-tight">
+                      {currentUser.displayName}
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-700">
+                      {currentUser.role === 'guest'
+                        ? 'Khách tham quan'
+                        : currentUser.classId || 'Học sinh'}
+                    </span>
                   </div>
-                </div>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                </button>
 
-                {/* Right 4 Competency Columns (Exact replication from image) */}
-                <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                  
-                  {/* Skill 1: Phân tích lựa chọn */}
-                  <div className="space-y-1">
-                    <div className="w-8 h-8 mx-auto rounded-full bg-[#E8F5E9] flex items-center justify-center text-[#2E7D32]">
-                      <Lightbulb className="w-4 h-4" />
-                    </div>
-                    <div className="text-[11px] font-bold text-slate-800 leading-tight">
-                      Phân tích lựa chọn
-                    </div>
-                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden mt-1">
-                      <div className="h-full bg-[#2E7D32] rounded-full" style={{ width: `${(student.skills.analysis / 5) * 100}%` }} />
-                    </div>
-                    <div className="text-[10px] font-mono text-slate-400">
-                      {student.skills.analysis}/5
-                    </div>
-                  </div>
-
-                  {/* Skill 2: Sử dụng bằng chứng */}
-                  <div className="space-y-1">
-                    <div className="w-8 h-8 mx-auto rounded-full bg-[#E0F2FE] flex items-center justify-center text-[#0284C7]">
-                      <Search className="w-4 h-4" />
-                    </div>
-                    <div className="text-[11px] font-bold text-slate-800 leading-tight">
-                      Sử dụng bằng chứng
-                    </div>
-                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden mt-1">
-                      <div className="h-full bg-[#0284C7] rounded-full" style={{ width: `${(student.skills.evidence / 5) * 100}%` }} />
-                    </div>
-                    <div className="text-[10px] font-mono text-slate-400">
-                      {student.skills.evidence}/5
-                    </div>
-                  </div>
-
-                  {/* Skill 3: Tư duy phản biện */}
-                  <div className="space-y-1">
-                    <div className="w-8 h-8 mx-auto rounded-full bg-[#F3E8FF] flex items-center justify-center text-[#9333EA]">
-                      <Brain className="w-4 h-4" />
-                    </div>
-                    <div className="text-[11px] font-bold text-slate-800 leading-tight">
-                      Tư duy phản biện
-                    </div>
-                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden mt-1">
-                      <div className="h-full bg-[#9333EA] rounded-full" style={{ width: `${(student.skills.criticalThinking / 5) * 100}%` }} />
-                    </div>
-                    <div className="text-[10px] font-mono text-slate-400">
-                      {student.skills.criticalThinking}/5
-                    </div>
-                  </div>
-
-                  {/* Skill 4: Hành động xanh */}
-                  <div className="space-y-1">
-                    <div className="w-8 h-8 mx-auto rounded-full bg-[#E8F5E9] flex items-center justify-center text-[#2E7D32]">
-                      <Leaf className="w-4 h-4" />
-                    </div>
-                    <div className="text-[11px] font-bold text-slate-800 leading-tight">
-                      Hành động xanh
-                    </div>
-                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden mt-1">
-                      <div className="h-full bg-[#2E7D32] rounded-full" style={{ width: `${(student.skills.greenAction / 5) * 100}%` }} />
-                    </div>
-                    <div className="text-[10px] font-mono text-slate-400">
-                      {student.skills.greenAction}/5
-                    </div>
-                  </div>
-
-                </div>
-
-              </div>
-
-            </section>
-
-          </div>
-
-          {/* ======================================================= */}
-          {/* RIGHT COLUMN: AI ĐỒNG HÀNH & GÓC GIÁO VIÊN (~35% width)  */}
-          {/* ======================================================= */}
-          <div className="lg:col-span-4 space-y-5">
-            
-            {/* WIDGET 1: AI ĐỒNG HÀNH */}
-            <section className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] shadow-2xs space-y-3">
-              
-              {/* Header with Mint Capsule */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xl">🤖</span>
-                  <h2 className="text-base font-black text-slate-900">
-                    AI đồng hành
-                  </h2>
-                </div>
-
-                <div className="px-2.5 py-0.5 bg-[#E8F5E9] text-[#2E7D32] text-[10px] font-extrabold rounded-full">
-                  Cùng em suy nghĩ – Cùng em khám phá
-                </div>
-              </div>
-
-              {/* Chat Stream */}
-              <div className="space-y-2.5 max-h-52 overflow-y-auto pr-1">
-                {chatMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex items-start gap-2 ${
-                      msg.sender === 'user' ? 'flex-row-reverse' : ''
-                    }`}
-                  >
-                    {msg.sender === 'ai' ? (
-                      <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-emerald-200">
+                {/* Account & Role Dropdown Menu */}
+                {showAccountMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-3xl shadow-2xl border border-slate-200 py-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                    {/* User Info Header */}
+                    <div className="px-4 py-2 border-b border-slate-100 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 border border-slate-300 shrink-0">
                         <img
-                          src="/assets/extracted/robot_clean.png"
-                          alt="AI Robot"
+                          src={
+                            currentUser.avatar ||
+                            (currentUser.role === 'guest'
+                              ? '/assets/ai_impact/guest_icon.png'
+                              : '/assets/ai_impact/student_icon.png')
+                          }
+                          alt={currentUser.displayName}
                           className="w-full h-full object-cover"
                         />
                       </div>
-                    ) : (
-                      <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-300 shrink-0">
-                        <img
-                          src="/assets/extracted/top_avatar.png"
-                          alt="User"
-                          className="w-full h-full object-cover"
-                        />
+                      <div className="overflow-hidden">
+                        <div className="text-xs font-black text-slate-900 truncate">
+                          {currentUser.displayName}
+                        </div>
+                        <div className="text-[10px] text-slate-500 truncate">
+                          {currentUser.email || 'Thành viên'}
+                        </div>
+                        <div className="text-[10px] font-bold text-emerald-700">
+                          {currentUser.role === 'guest' ? '🌟 Khách tham quan' : '🎒 Học sinh'}
+                        </div>
                       </div>
-                    )}
+                    </div>
 
-                    <div
-                      className={`p-2.5 rounded-2xl text-xs leading-relaxed max-w-[85%] ${
-                        msg.sender === 'ai'
-                          ? 'bg-[#EBF7F0] text-slate-800 rounded-tl-xs'
-                          : 'bg-[#15803D] text-white rounded-tr-xs'
-                      }`}
+                    {/* Quick Switch Roles */}
+                    <div className="px-4 pt-2.5 pb-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Chuyển đổi vai trò:
+                    </div>
+
+                    <button
+                      onClick={() => handleSwitchRole('student')}
+                      className="w-full text-left px-4 py-1.5 text-xs font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 flex items-center gap-2 cursor-pointer transition-colors"
                     >
-                      <p>{msg.text}</p>
-                      <span
-                        className={`text-[9px] block text-right mt-0.5 ${
-                          msg.sender === 'ai' ? 'text-slate-400' : 'text-emerald-200'
-                        }`}
-                      >
-                        {msg.timestamp}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                      <span>🎒</span> <span>Học sinh (Minh Anh)</span>
+                    </button>
 
-                {isAiThinking && (
-                  <div className="flex items-center gap-1.5 text-xs text-slate-400 pl-10">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" />
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce [animation-delay:0.4s]" />
+                    <button
+                      onClick={() => handleSwitchRole('teacher')}
+                      className="w-full text-left px-4 py-1.5 text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-800 flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <span>👩‍🏫</span> <span>Giáo viên (Cô Yến)</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleSwitchRole('guest')}
+                      className="w-full text-left px-4 py-1.5 text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-800 flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <span>🌟</span> <span>Khách tham quan</span>
+                    </button>
+
+                    {/* Log out button */}
+                    <div className="border-t border-slate-100 mt-2 pt-1 px-1">
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full text-left px-3 py-2 text-xs font-black text-rose-600 hover:bg-rose-50 rounded-2xl flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Đăng xuất tài khoản</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
+            )}
 
-              {/* Input Box */}
-              <div className="relative">
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSendMessage();
-                  }}
-                  placeholder="Hãy chia sẻ suy nghĩ của em..."
-                  className="w-full pl-3 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
-                />
-                <button
-                  onClick={() => handleSendMessage()}
-                  className="absolute right-1.5 top-1.5 p-1 bg-[#10B981] hover:bg-[#059669] text-white rounded-lg transition-colors cursor-pointer"
-                  title="Gửi câu trả lời"
-                >
-                  <Send className="w-3 h-3" />
-                </button>
-              </div>
-
-              {/* 4 Quick Suggestion Chips (from image) */}
-              <div className="flex flex-wrap gap-1.5 pt-0.5">
-                {['Ví dụ: số liệu', 'Kết quả thí nghiệm', 'Ý kiến chuyên gia', 'Trải nghiệm thực tế'].map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => handleSendMessage(tag)}
-                    className="px-2 py-0.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 font-bold text-[10px] rounded-md border border-slate-200 transition-colors cursor-pointer"
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-
-            </section>
-
-            {/* WIDGET 2: GÓC GIÁO VIÊN */}
-            <section className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] shadow-2xs space-y-3.5">
-              
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-black text-slate-900 flex items-center gap-1.5">
-                    <span className="text-xl">👥</span>
-                    <span>Góc giáo viên</span>
-                  </h2>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    Theo dõi tiến bộ và đồng hành cùng học sinh
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => {
-                    sounds.playClick();
-                    setShowTeacherModal(true);
-                  }}
-                  className="text-xs font-bold text-slate-700 hover:text-emerald-700 flex items-center gap-1 transition-colors cursor-pointer"
-                >
-                  <span>Xem chi tiết</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Progress Summary: Donut Gauge + Topic Progress */}
-              <div className="space-y-3">
-                
-                {/* Donut Gauge Row */}
-                <div className="flex items-center gap-4 p-2 bg-[#F8FAFB] rounded-xl border border-slate-100">
-                  {/* Donut graphic */}
-                  <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
-                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                      <path
-                        className="text-slate-200"
-                        strokeWidth="3.6"
-                        stroke="currentColor"
-                        fill="none"
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                      <path
-                        className="text-[#10B981]"
-                        strokeDasharray="85, 100"
-                        strokeWidth="3.6"
-                        strokeLinecap="round"
-                        stroke="currentColor"
-                        fill="none"
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                    </svg>
-                    <span className="absolute font-black text-xs text-slate-900 font-mono">
-                      85%
-                    </span>
-                  </div>
-
-                  <div className="space-y-0.5">
-                    <div className="text-xs font-black text-slate-900">
-                      Hoàn thành thử thách tuần này
-                    </div>
-                    <div className="text-[11px] text-slate-500 font-semibold font-mono">
-                      {TEACHER_DATA.completedStudents} / {TEACHER_DATA.totalStudents} học sinh
-                    </div>
-                  </div>
-                </div>
-
-                {/* Topic Breakdown List */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                    <span>Tiến độ theo chủ đề</span>
-                    <span className="text-[11px] font-extrabold text-slate-500 flex items-center gap-0.5 cursor-pointer">
-                      <span>{TEACHER_DATA.className}</span>
-                      <ChevronDown className="w-2.5 h-2.5" />
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5 text-xs">
-                    {TEACHER_DATA.topics.map((topic, i) => (
-                      <div key={i} className="space-y-0.5">
-                        <div className="flex justify-between items-center text-slate-700 font-bold text-[11px]">
-                          <span className="flex items-center gap-1.5">
-                            <span>{topic.icon}</span>
-                            <span>{topic.name}</span>
-                          </span>
-                          <span className="font-mono text-slate-800 text-[10px]">{topic.percent}%</span>
-                        </div>
-                        <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full"
-                            style={{
-                              width: `${topic.percent}%`,
-                              backgroundColor: topic.color,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-
-            </section>
+            {/* Mobile menu hamburger */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
 
           </div>
 
         </div>
 
-        {/* ========================================================= */}
-        {/* FOOTER VALUES BAR (Exact 4 pillars from image)            */}
-        {/* ========================================================= */}
-        <footer className="pt-1">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-            
-            {/* 1. An toàn số */}
-            <div className="p-3 bg-[#E8F5E9] border border-[#C8E6C9] rounded-2xl flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-[#15803D] text-white flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-3.5 h-3.5" />
-              </div>
-              <div>
-                <div className="text-xs font-black text-slate-900 leading-tight">
-                  An toàn số
-                </div>
-                <div className="text-[10px] text-slate-600 font-medium">
-                  Sử dụng internet an toàn và có trách nhiệm.
-                </div>
-              </div>
+        {/* Mobile dropdown navigation */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-2 animate-in slide-in-from-top-2">
+            <div className="grid grid-cols-2 gap-2">
+              {navItems.map((item) => {
+                const isActive = currentView === item.id;
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      sounds.playClick();
+                      setCurrentView(item.id);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-2 p-2.5 rounded-xl text-xs font-black transition-all ${
+                      isActive ? 'bg-[#15803D] text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  setIsGuideOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex items-center gap-2 p-2.5 rounded-xl text-xs font-black bg-slate-50 text-slate-700 hover:bg-slate-100"
+              >
+                <BookOpen className="w-4 h-4 text-emerald-600" />
+                <span>Hướng dẫn</span>
+              </button>
             </div>
 
-            {/* 2. Tư duy bền vững */}
-            <div className="p-3 bg-[#E8F5E9] border border-[#C8E6C9] rounded-2xl flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-[#15803D] text-white flex items-center justify-center shrink-0">
-                <Sprout className="w-3.5 h-3.5" />
+            {/* Mobile Auth button */}
+            {currentUser && (
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-600">
+                  {currentUser.displayName}
+                </span>
+                <button
+                  onClick={() => {
+                    handleSignOut();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="px-3 py-1.5 text-xs font-black text-rose-600 bg-rose-50 rounded-xl"
+                >
+                  Đăng xuất
+                </button>
               </div>
-              <div>
-                <div className="text-xs font-black text-slate-900 leading-tight">
-                  Tư duy bền vững
-                </div>
-                <div className="text-[10px] text-slate-600 font-medium">
-                  Hôm nay em học – ngày mai Trái Đất tươi xanh hơn.
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Học bằng hành động */}
-            <div className="p-3 bg-[#E8F5E9] border border-[#C8E6C9] rounded-2xl flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-[#15803D] text-white flex items-center justify-center shrink-0">
-                <Users className="w-3.5 h-3.5" />
-              </div>
-              <div>
-                <div className="text-xs font-black text-slate-900 leading-tight">
-                  Học bằng hành động
-                </div>
-                <div className="text-[10px] text-slate-600 font-medium">
-                  Những lựa chọn nhỏ tạo nên thay đổi lớn.
-                </div>
-              </div>
-            </div>
-
-            {/* 4. Vì một hành tinh xanh */}
-            <div className="p-3 bg-[#E8F5E9] border border-[#C8E6C9] rounded-2xl flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-[#0284C7] text-white flex items-center justify-center shrink-0 text-xs">
-                🌍
-              </div>
-              <div>
-                <div className="text-xs font-black text-slate-900 leading-tight">
-                  Vì một hành tinh
-                </div>
-                <div className="text-[10px] text-slate-600 font-medium">
-                  xanh hơn cho thế hệ mai sau 💚
-                </div>
-              </div>
-            </div>
-
+            )}
           </div>
-        </footer>
+        )}
+      </header>
 
+      {/* STUDENT & MAIN WORKSPACE */}
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-5">
+        {currentView === 'home' && (
+          <HomeView
+            onNavigate={setCurrentView}
+            currentUser={currentUser}
+            onOpenAuth={handleOpenAuth}
+            onSelectRole={handleSwitchRole}
+          />
+        )}
+
+        {currentView === 'challenges' && (
+          <ChallengesView
+            onSelectChallenge={handleSelectChallenge}
+            onNavigate={setCurrentView}
+          />
+        )}
+
+        {currentView === 'project_space' && (
+          <ProjectSpaceView
+            project={currentProject}
+            onUpdateProject={setCurrentProject}
+            onNavigate={setCurrentView}
+            currentUser={currentUser}
+          />
+        )}
+
+        {currentView === 'ai_lab' && (
+          <AILabView onNavigate={setCurrentView} />
+        )}
+
+        {currentView === 'ai_check' && (
+          <AICheckView
+            project={currentProject}
+            onUpdateProject={setCurrentProject}
+            onNavigate={setCurrentView}
+            currentUser={currentUser}
+          />
+        )}
+
+        {currentView === 'report' && (
+          <ReportView
+            project={currentProject}
+            onUpdateProject={setCurrentProject}
+            onNavigate={setCurrentView}
+            currentUser={currentUser}
+          />
+        )}
       </main>
 
-      {/* ========================================================= */}
-      {/* INTERACTIVE MODALS                                        */}
-      {/* ========================================================= */}
-      {activeChallenge && (
-        <ChallengeModal
-          challenge={activeChallenge}
-          onClose={() => setActiveChallenge(null)}
-          onComplete={handleCompleteChallenge}
-        />
-      )}
+      {/* FOOTER VALUES BAR */}
+      <footer className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-10 pt-4 print:hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0">
+              🛡️
+            </div>
+            <div>
+              <div className="text-xs font-black text-slate-900 leading-tight">An toàn số</div>
+              <div className="text-[10px] text-slate-500 font-medium">Sử dụng AI có trách nhiệm và bảo mật.</div>
+            </div>
+          </div>
 
-      {showTeacherModal && (
-        <TeacherModal onClose={() => setShowTeacherModal(false)} />
-      )}
+          <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0">
+              🌱
+            </div>
+            <div>
+              <div className="text-xs font-black text-slate-900 leading-tight">Tư duy bền vững</div>
+              <div className="text-[10px] text-slate-500 font-medium">Hôm nay em học – ngày mai Trái Đất xanh.</div>
+            </div>
+          </div>
 
-      {showProfileModal && (
-        <ProfileModal student={student} onClose={() => setShowProfileModal(false)} />
-      )}
+          <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0">
+              🤝
+            </div>
+            <div>
+              <div className="text-xs font-black text-slate-900 leading-tight">Học bằng hành động</div>
+              <div className="text-[10px] text-slate-500 font-medium">Hành động nhỏ tạo nên thay đổi lớn.</div>
+            </div>
+          </div>
+
+          <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center font-bold text-xs shrink-0">
+              🌍
+            </div>
+            <div>
+              <div className="text-xs font-black text-slate-900 leading-tight">Vì một hành tinh xanh</div>
+              <div className="text-[10px] text-slate-500 font-medium">Kiến tạo tương lai cùng công nghệ số 💚</div>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* AUTHENTICATION & REGISTRATION MODAL */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        initialRole={authInitialRole}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
+          if (user.role === 'teacher') {
+            setCurrentView('teacher_dashboard');
+          }
+          setNotification(`Đăng nhập thành công với vai trò: ${user.role === 'teacher' ? 'Giáo viên' : 'Học sinh'}!`);
+          setTimeout(() => setNotification(null), 3000);
+        }}
+      />
+
+      {/* USER GUIDE MODAL */}
+      <GuideModal
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+        onStartStudent={() => {
+          if (!currentUser) {
+            handleSwitchRole('student');
+          }
+          setCurrentView('challenges');
+        }}
+        onStartTeacher={() => {
+          if (currentUser?.role === 'teacher') {
+            setCurrentView('teacher_dashboard');
+          } else {
+            handleOpenAuth('teacher');
+          }
+        }}
+      />
 
     </div>
   );
